@@ -4,15 +4,12 @@ import com.workintech.s18d2.entity.Fruit;
 import com.workintech.s18d2.entity.FruitType;
 import com.workintech.s18d2.entity.Vegetable;
 import com.workintech.s18d2.exceptions.PlantException;
-import com.workintech.s18d2.repository.FruitRepository;
+import com.workintech.s18d2.dao.FruitRepository;
 import com.workintech.s18d2.services.FruitServiceImpl;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.boot.test.autoconfigure.orm.jpa.TestEntityManager;
@@ -29,7 +26,6 @@ import static org.mockito.Mockito.when;
 
 @DataJpaTest
 @ActiveProfiles("test")
-@ExtendWith(MockitoExtension.class)
 @ExtendWith(ResultAnalyzer.class)
 class MainTest {
     @Autowired
@@ -38,11 +34,7 @@ class MainTest {
     @Autowired
     private FruitRepository fruitRepository;
 
-    @Mock
     private FruitRepository mockFruitRepository;
-
-
-
     private FruitServiceImpl fruitService;
 
     private Fruit sampleFruitForFruitServiceTest;
@@ -64,10 +56,15 @@ class MainTest {
 
         entityManager.flush();
 
+        // Setup for service tests
         sampleFruitForFruitServiceTest = new Fruit();
         sampleFruitForFruitServiceTest.setId(1L);
         sampleFruitForFruitServiceTest.setName("Apple");
+        sampleFruitForFruitServiceTest.setPrice(15.0);
+        sampleFruitForFruitServiceTest.setFruitType(FruitType.SWEET);
 
+        // Create mock for service tests
+        mockFruitRepository = org.mockito.Mockito.mock(FruitRepository.class);
         fruitService = new FruitServiceImpl(mockFruitRepository);
     }
 
@@ -111,17 +108,17 @@ class MainTest {
         assertEquals(2L, vegetable.getId());
         assertEquals("Carrot", vegetable.getName());
         assertEquals(20.0, vegetable.getPrice());
-        assertFalse(vegetable.isGrownOnTree());
+        assertFalse(vegetable.getGrownOnTree());
 
 
         vegetable.setGrownOnTree(true);
-        assertTrue(vegetable.isGrownOnTree());
+        assertTrue(vegetable.getGrownOnTree());
     }
 
     @Test
     @DisplayName("FruitRepository::getByPriceDesc should return fruits in descending order of price")
     void testGetByPriceDesc() {
-        List<Fruit> fruits = fruitRepository.getByPriceDesc();
+        List<Fruit> fruits = fruitRepository.findAllOrderByPriceDesc();
         assertEquals(2, fruits.size());
         assertTrue(fruits.get(0).getPrice() >= fruits.get(1).getPrice());
     }
@@ -129,7 +126,7 @@ class MainTest {
     @Test
     @DisplayName("FruitRepository::getByPriceAsc should return fruits in ascending order of price")
     void testGetByPriceAsc() {
-        List<Fruit> fruits = fruitRepository.getByPriceAsc();
+        List<Fruit> fruits = fruitRepository.findAllOrderByPriceAsc();
         assertEquals(2, fruits.size());
         assertTrue(fruits.get(0).getPrice() <= fruits.get(1).getPrice());
     }
@@ -137,7 +134,7 @@ class MainTest {
     @Test
     @DisplayName("FruitRepository::searchByName should return fruits with matching name")
     void testSearchByName() {
-        List<Fruit> fruits = fruitRepository.searchByName("Apple");
+        List<Fruit> fruits = fruitRepository.findByNameContainingIgnoreCase("Apple");
         assertEquals(1, fruits.size());
         assertEquals("Apple", fruits.get(0).getName());
     }
@@ -164,7 +161,7 @@ class MainTest {
     @Test
     @DisplayName("FruitService::getAll() should return all fruits")
     void testGetByPriceAscFruitService() {
-        when(mockFruitRepository.getByPriceAsc()).thenReturn(Arrays.asList(sampleFruitForFruitServiceTest));
+        when(mockFruitRepository.findAllOrderByPriceAsc()).thenReturn(Arrays.asList(sampleFruitForFruitServiceTest));
 
         List<Fruit> fruits = fruitService.getByPriceAsc();
 
@@ -198,7 +195,7 @@ class MainTest {
     @Test
     @DisplayName("FruitService::searchByName() should return fruits with the given name")
     void testSearchByNameFruitService() {
-        when(mockFruitRepository.searchByName(anyString())).thenReturn(Arrays.asList(sampleFruitForFruitServiceTest));
+        when(mockFruitRepository.findByNameContainingIgnoreCase(anyString())).thenReturn(Arrays.asList(sampleFruitForFruitServiceTest));
 
         List<Fruit> fruits = fruitService.searchByName("Apple");
 

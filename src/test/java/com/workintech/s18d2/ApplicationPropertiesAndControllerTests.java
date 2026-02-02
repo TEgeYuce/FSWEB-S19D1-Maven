@@ -31,7 +31,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 
-
 @WebMvcTest(value = {ApplicationPropertiesAndControllerTests.class, FruitController.class})
 @ExtendWith(ResultAnalyzer2.class)
 class ApplicationPropertiesAndControllerTests {
@@ -133,5 +132,4 @@ class ApplicationPropertiesAndControllerTests {
                 .andExpect(status().isOk());
     }
 }
-
 
